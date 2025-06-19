@@ -7,7 +7,8 @@ class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
 
-  final String baseUrl = 'http://127.0.0.1:8000'; // Cambiar si usas dispositivo físico
+  //final String baseUrl = 'http://127.0.0.1:8000'; // Cambiar si usas dispositivo físico
+  final String baseUrl = 'https://app-abj-backend.onrender.com/';
 
   ApiService._internal();
 
