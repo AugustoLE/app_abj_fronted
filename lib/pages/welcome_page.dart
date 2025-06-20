@@ -102,7 +102,7 @@ class _WelcomePageState extends State<WelcomePage> with TickerProviderStateMixin
                   ScaleTransition(
                     scale: _logoAnimation,
                     child: Image.asset(
-                      '../assets/Imagenes/imagenes_bienvenida/logo.png',
+                      'assets/Imagenes/imagenes_bienvenida/logo.png',
                       width: screenWidth * 0.6,
                       height: screenWidth * 0.6,
                     ),
