@@ -23,21 +23,21 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-assets:
-  - assets/audio/musica.mp3
-  - assets/Imagenes/imagenes_bienvenida/
-  - assets/Imagenes/imagenes_edad/
-  - assets/Imagenes/imagenes_nombre/
-  - assets/Imagenes/imagenes_curso_matematicas/
-  - assets/Imagenes/imagenes_curso_ciencia/
-  - assets/Imagenes/imagenes_curso_comunicacion/
-  - assets/Imagenes/imagenes_seleccionar_cursos/
-  - assets/Imagenes/Juegos/JuegosMate/Juego2/graphics/
-  - assets/Imagenes/Juegos/JuegosMate/Juego2/graphics/AΔB.png
-  - assets/Imagenes/Juegos/files/palabrasJuegoOrtografia.csv
-  - assets/Imagenes/Juegos/JuegosComu/Juego1/
-  - assets/Imagenes/Juegos/files/partesDelCuerpoCien.csv
-  - assets/Imagenes/Juegos/JuegosCien/Juego1/
-  - assets/Imagenes/imagenes_perfil/
-  - assets/Imagenes/Juegos/files/animalesTiposCien.csv
-  - assets/Imagenes/Juegos/JuegosCien/Juego2/
+  assets:
+    - assets/audio/musica.mp3
+    - assets/Imagenes/imagenes_bienvenida/
+    - assets/Imagenes/imagenes_edad/
+    - assets/Imagenes/imagenes_nombre/
+    - assets/Imagenes/imagenes_curso_matematicas/
+    - assets/Imagenes/imagenes_curso_ciencia/
+    - assets/Imagenes/imagenes_curso_comunicacion/
+    - assets/Imagenes/imagenes_seleccionar_cursos/
+    - assets/Imagenes/Juegos/JuegosMate/Juego2/graphics/
+    - assets/Imagenes/Juegos/JuegosMate/Juego2/graphics/AΔB.png
+    - assets/Imagenes/Juegos/files/palabrasJuegoOrtografia.csv
+    - assets/Imagenes/Juegos/JuegosComu/Juego1/
+    - assets/Imagenes/Juegos/files/partesDelCuerpoCien.csv
+    - assets/Imagenes/Juegos/JuegosCien/Juego1/
+    - assets/Imagenes/imagenes_perfil/
+    - assets/Imagenes/Juegos/files/animalesTiposCien.csv
+    - assets/Imagenes/Juegos/JuegosCien/Juego2/
