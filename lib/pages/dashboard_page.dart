@@ -3,7 +3,38 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../pages/welcome_page.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
+  @override
+  _DashboardPageState createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> with TickerProviderStateMixin {
+  late AnimationController _titleController;
+  late Animation<Offset> _titleOffsetAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _titleController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 700),
+    );
+
+    _titleOffsetAnimation = Tween<Offset>(
+      begin: Offset(0.0, -1.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _titleController, curve: Curves.easeOut));
+
+    _titleController.forward();
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)!.settings.arguments;
@@ -14,6 +45,8 @@ class DashboardPage extends StatelessWidget {
     }
 
     final UserModel user = args;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     final Map<String, String> courseRoutes = {
       'Matemáticas 1': '/game_math1',
       'Matemáticas 2': '/game_math2',
@@ -33,8 +66,15 @@ class DashboardPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false, // Esto quita la flecha
-        title: Text('Bienvenido, ${user.childName}!'),
+        automaticallyImplyLeading: false,
+        title: Text(
+          '¡Hola, ${user.childName}! 🎮',
+          style: TextStyle(
+            fontSize: (screenWidth * 0.03).clamp(16.0, 24.0),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.teal[50],
         actions: [
           TextButton(
             onPressed: () => Navigator.pushNamed(context, '/profile', arguments: user),
@@ -43,11 +83,11 @@ class DashboardPage extends StatelessWidget {
           TextButton(
             onPressed: () async {
               final prefs = await SharedPreferences.getInstance();
-              await prefs.remove('user_email'); // cerrar sesión
+              await prefs.remove('user_email');
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (_) => WelcomePage()), // o usa rutas con nombre si prefieres
-                    (Route<dynamic> route) => false, // Esto elimina todo el stack
+                MaterialPageRoute(builder: (_) => WelcomePage()),
+                    (Route<dynamic> route) => false,
               );
             },
             child: Text('Cerrar sesión', style: TextStyle(color: Colors.red)),
@@ -56,34 +96,64 @@ class DashboardPage extends StatelessWidget {
       ),
       body: Padding(
         padding: EdgeInsets.all(16),
-        child: GridView.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 3 / 2,
-          ),
-          itemCount: available.length,
-          itemBuilder: (context, i) {
-            final entry = available[i];
-            return Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 4,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () => Navigator.pushNamed(context, entry.value),
-                child: Center(
-                  child: Text(
-                    entry.key,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SlideTransition(
+              position: _titleOffsetAnimation,
+              child: Text(
+                '🧩 Juegos disponibles según tus cursos:',
+                style: TextStyle(
+                  fontSize: (screenWidth * 0.045).clamp(18.0, 24.0),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.teal[800],
                 ),
               ),
-            );
-          },
+            ),
+            SizedBox(height: 16),
+            Expanded(
+              child: GridView.builder(
+                itemCount: available.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 3 / 2,
+                ),
+                itemBuilder: (context, i) {
+                  final entry = available[i];
+                  return Card(
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    color: Colors.teal[100],
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () => Navigator.pushNamed(context, entry.value),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Center(
+                          child: Text(
+                            entry.key,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: (screenWidth * 0.045).clamp(16.0, 20.0),
+                              fontWeight: FontWeight.bold,
+                              color: Colors.teal[900],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
+      backgroundColor: Colors.white,
     );
   }
 }
