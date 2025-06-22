@@ -23,7 +23,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
+  fonts:
+    - family: 'Caprasimo'
+      fonts:
+        - asset: assets/fonts/Caprasimo-Regular.ttf
   assets:
     - assets/audio/musica.mp3
     - assets/Imagenes/imagenes_bienvenida/logo.png

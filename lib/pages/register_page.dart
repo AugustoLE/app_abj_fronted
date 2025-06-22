@@ -45,44 +45,49 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
 
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Verificación'),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            return Row(
-              children: [
-                Checkbox(
-                  value: esHumano,
-                  onChanged: (value) {
-                    setState(() {
-                      esHumano = value ?? false;
-                    });
-                  },
-                ),
-                Expanded(child: Text('✅ Confirmo que soy un humano')),
-              ],
-            );
-          },
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Row(
+            children: [
+              Icon(Icons.verified_user, color: Colors.teal, size: 28),
+              SizedBox(width: 8),
+              Text('Verificación de humano'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Por favor, confirma que no eres un robot.'),
+              SizedBox(height: 10),
+              CheckboxListTile(
+                title: Text('✅ Confirmo que soy un humano'),
+                value: esHumano,
+                activeColor: Colors.teal,
+                onChanged: (val) => setState(() => esHumano = val ?? false),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancelar'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: Text('Continuar'),
+              onPressed: () {
+                if (esHumano) {
+                  Navigator.of(context).pop();
+                  _realizarRegistro();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Debes confirmar que eres humano.')),
+                  );
+                }
+              },
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            child: Text('Cancelar'),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          TextButton(
-            child: Text('Continuar'),
-            onPressed: () {
-              if (esHumano) {
-                Navigator.of(context).pop();
-                _realizarRegistro(); // Solo si confirmó
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Debes confirmar que eres humano.')),
-                );
-              }
-            },
-          ),
-        ],
       ),
     );
   }
@@ -99,7 +104,7 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
       _formKey.currentState!.save();
       newUser.courses = List.from(courses);
 
-      await mostrarDialogoVerificacionHumana(); // Mostrar verificación antes de registrar
+      await mostrarDialogoVerificacionHumana();
     }
   }
 
@@ -132,7 +137,7 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Text(
-          'Registro ABJ 🧠',
+          'Registro ABC Games 🧠',
           style: TextStyle(
             fontSize: (screenWidth * 0.03).clamp(16.0, 24.0),
             fontWeight: FontWeight.bold,
@@ -169,21 +174,7 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SlideTransition(
-                          position: _textOffsetAnimation,
-                          child: Center(
-                            child: Text(
-                              '👨‍👩‍👧 Registro Familiar',
-                              style: TextStyle(
-                                fontSize: (screenWidth * 0.05).clamp(20.0, 28.0),
-                                fontWeight: FontWeight.bold,
-                                color: Colors.teal,
-                              ),
-                            ),
-                          ),
-                        ),
                         SizedBox(height: screenHeight * 0.025),
-
                         _seccionTitulo('👩‍🏫 Datos del familiar', '(campos obligatorios)'),
                         _campoTexto('Nombre', (val) => newUser.parentName = val),
                         _campoTexto('Apellido', (val) => newUser.parentLastName = val),
@@ -192,33 +183,52 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                         _campoTexto('Contraseña', (val) => newUser.parentPassword = val, oculto: true),
 
                         SizedBox(height: 20),
-
                         _seccionTitulo('🧒 Datos del infante', '(campos obligatorios)'),
                         _campoTexto('Nombre', (val) => newUser.childName = val),
                         _campoTexto('Apellido', (val) => newUser.childLastName = val),
 
                         SizedBox(height: 20),
-
                         _seccionTitulo('📚 Cursos preferidos', '(seleccionar un curso como mínimo)'),
                         SizedBox(height: 8),
-                        ...availableCourses.map((course) => CheckboxListTile(
-                          title: Text(course),
-                          value: courses.contains(course),
-                          activeColor: Colors.teal,
-                          onChanged: (checked) {
-                            setState(() {
-                              if (checked == true) courses.add(course);
-                              else courses.remove(course);
-                            });
-                          },
-                        )),
+                        // Cursos como grupo con borde
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: courses.isEmpty ? Colors.red : Colors.grey.shade400,
+                              width: 1.5,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            children: availableCourses.map((course) {
+                              return CheckboxListTile(
+                                title: Text(course, style: TextStyle(fontSize: 16)),
+                                value: courses.contains(course),
+                                activeColor: Colors.teal,
+                                contentPadding: EdgeInsets.zero,
+                                controlAffinity: ListTileControlAffinity.leading,
+                                onChanged: (checked) {
+                                  setState(() {
+                                    if (checked == true) {
+                                      courses.add(course);
+                                    } else {
+                                      courses.remove(course);
+                                    }
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ),
 
                         SizedBox(height: 24),
                         Center(
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               minimumSize: Size(double.infinity, 50),
-                              backgroundColor: Colors.teal,
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -243,32 +253,43 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
 
   Widget _campoTexto(String label, Function(String) onSave,
       {bool oculto = false, TextInputType tipo = TextInputType.text}) {
-    return TextFormField(
-      decoration: InputDecoration(labelText: label),
-      obscureText: oculto,
-      keyboardType: tipo,
-      validator: (val) => val == null || val.isEmpty ? 'Requerido' : null,
-      onSaved: (val) => onSave(val!.trim()),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: TextFormField(
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        ),
+        obscureText: oculto,
+        keyboardType: tipo,
+        validator: (val) => val == null || val.isEmpty ? 'Requerido' : null,
+        onSaved: (val) => onSave(val!.trim()),
+      ),
     );
   }
 
   Widget _seccionTitulo(String titulo, String subtitulo) {
-    return Row(
-      children: [
-        Text(
-          titulo,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          Text(
+            titulo,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
           ),
-        ),
-        SizedBox(width: 8),
-        Text(
-          subtitulo,
-          style: TextStyle(fontSize: 12, color: Colors.red),
-        ),
-      ],
+          SizedBox(width: 8),
+          Text(
+            subtitulo,
+            style: TextStyle(fontSize: 10, color: Colors.red),
+          ),
+        ],
+      ),
     );
   }
 }

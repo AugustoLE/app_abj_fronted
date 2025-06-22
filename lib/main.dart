@@ -22,9 +22,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Colegio Games',
+      title: 'Aplicación ABJ',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+          fontFamily: 'Caprasimo',
+          primarySwatch: Colors.blue),
       initialRoute: initialRoute,
       routes: appRoutes,
     );

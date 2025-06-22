@@ -97,8 +97,6 @@ class _MathGame1PageState extends State<MathGame1Page> {
       'fecha_hora': ahora.toIso8601String()
     });
 
-    print(jsonEncode(registros.last));
-
     if (esCorrecto) {
       correctas++;
     } else {
@@ -197,8 +195,6 @@ class _MathGame1PageState extends State<MathGame1Page> {
       'incorrectas': incorrectas,
     };
 
-    print(jsonEncode(resumenJson));
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -283,7 +279,7 @@ class _MathGame1PageState extends State<MathGame1Page> {
 
   Widget _buildTextField(String hint, bool oculto, String? valor) {
     return SizedBox(
-      width: 120,
+      width: 100,
       height: 60,
       child: oculto
           ? TextField(
@@ -316,7 +312,7 @@ class _MathGame1PageState extends State<MathGame1Page> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -325,71 +321,83 @@ class _MathGame1PageState extends State<MathGame1Page> {
           children: [
             SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: screenHeight - 100),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Juego Matemático',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFBD0000),
+              child: Center(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Juego Matemático',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFBD0000),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Operaciones matemáticas',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF123523),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 40),
+                    screenWidth > 600
+                        ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildTextField(' ?', indiceOculto == 0, '$num1'),
+                        const SizedBox(width: 10),
+                        Text(operador, style: const TextStyle(fontSize: 24)),
+                        const SizedBox(width: 10),
+                        _buildTextField(' ?', indiceOculto == 1, '$num2'),
+                        const SizedBox(width: 10),
+                        const Text('=', style: TextStyle(fontSize: 24)),
+                        const SizedBox(width: 10),
+                        _buildTextField(' ?', indiceOculto == 2, '$resultado'),
+                      ],
+                    )
+                        : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildTextField(' ?', indiceOculto == 0, '$num1'),
+                        const SizedBox(height: 8),
+                        Text(operador, style: const TextStyle(fontSize: 24)),
+                        const SizedBox(height: 8),
+                        _buildTextField(' ?', indiceOculto == 1, '$num2'),
+                        const SizedBox(height: 8),
+                        const Text('=', style: TextStyle(fontSize: 24)),
+                        const SizedBox(height: 8),
+                        _buildTextField(' ?', indiceOculto == 2, '$resultado'),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    ElevatedButton(
+                      onPressed: verificarRespuesta,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF54ACAC),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                        textStyle: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(color: Color(0xFF223030), width: 1),
                         ),
-                        textAlign: TextAlign.center,
+                        elevation: 4,
                       ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Operaciones matemáticas',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF123523),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 40),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildTextField(' ?', indiceOculto == 0, '$num1'),
-                          const SizedBox(width: 10),
-                          Text(operador, style: const TextStyle(fontSize: 24)),
-                          const SizedBox(width: 10),
-                          _buildTextField(' ?', indiceOculto == 1, '$num2'),
-                          const SizedBox(width: 10),
-                          const Text('=', style: TextStyle(fontSize: 24)),
-                          const SizedBox(width: 10),
-                          _buildTextField(' ?', indiceOculto == 2, '$resultado'),
-                        ],
-                      ),
-                      const SizedBox(height: 30),
-                      ElevatedButton(
-                        onPressed: verificarRespuesta,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF54ACAC),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                          textStyle: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(color: Color(0xFF223030), width: 1),
-                          ),
-                          elevation: 4,
-                        ),
-                        child: const Text('Comprobar'),
-                      ),
-                      const SizedBox(height: 30),
-                    ],
-                  ),
+                      child: const Text('Comprobar'),
+                    ),
+                    const SizedBox(height: 30),
+                  ],
                 ),
               ),
             ),
 
-            // Botón "home"
+            // Botón de regreso al menú
             Positioned(
               top: 16,
               left: 16,

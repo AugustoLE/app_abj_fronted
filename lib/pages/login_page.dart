@@ -159,7 +159,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               minimumSize: Size(double.infinity, 50),
-                              backgroundColor: Colors.teal,
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
