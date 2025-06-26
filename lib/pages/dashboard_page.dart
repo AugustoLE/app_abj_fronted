@@ -55,7 +55,6 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
       }
     });
 
-    // Animaciones individuales por tarjeta
     _controllers = List.generate(available.length, (i) {
       return AnimationController(
         vsync: this,
@@ -86,6 +85,10 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
           TextButton(
             onPressed: () => Navigator.pushNamed(context, '/profile', arguments: user),
             child: Text('Perfil', style: TextStyle(color: Colors.blue)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pushNamed(context, '/analysis', arguments: user),
+            child: Text('Análisis ML', style: TextStyle(color: Colors.teal)),
           ),
           TextButton(
             onPressed: () async {
@@ -140,7 +143,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                       color: Colors.blue.shade700,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(20),
-                        onTap: () => Navigator.pushNamed(context, entry.value),
+                        onTap: () => Navigator.pushNamed(context, entry.value, arguments: user),
                         child: Padding(
                           padding: const EdgeInsets.all(12.0),
                           child: Column(

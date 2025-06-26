@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/api_service.dart';
+import '../models/score_model.dart';
+import '../models/user_model.dart';
 
 class PalabraOrtografia {
   final String correcta;
@@ -25,7 +28,8 @@ class PalabraOrtografia {
 }
 
 class CommGame1Page extends StatefulWidget {
-  const CommGame1Page({Key? key}) : super(key: key);
+  final UserModel user;
+  const CommGame1Page({Key? key, required this.user}) : super(key: key);
 
   @override
   State<CommGame1Page> createState() => _CommGame1PageState();
@@ -75,6 +79,27 @@ class _CommGame1PageState extends State<CommGame1Page> {
       opciones = [palabraActual!.correcta, palabraActual!.incorrecta]..shuffle();
       inicioEjercicio = DateTime.now();
     });
+  }
+
+  String calcularNivel(int aciertos, int fallos) {
+    final tasaAciertos = aciertos / (aciertos + fallos);
+    if (tasaAciertos >= 0.8) return 'Avanzado';
+    if (tasaAciertos >= 0.5) return 'Intermedio';
+    return 'Principiante';
+  }
+
+  Future<void> _registrarPuntaje(ScoreModel score) async {
+    try {
+      final api = ApiService();
+      print('📤 Enviando puntaje al backend: ${jsonEncode(score.toJson())}');
+      await api.registerScore(widget.user.parentEmail, score);
+      print('✅ Puntaje registrado con éxito para ${widget.user.parentEmail}');
+    } catch (e, stackTrace) {
+      print('❌ Error al registrar puntaje: $e\n$stackTrace');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al registrar puntaje: $e')),
+      );
+    }
   }
 
   void verificarRespuesta(String seleccion) {
@@ -160,16 +185,16 @@ class _CommGame1PageState extends State<CommGame1Page> {
     final finJuego = DateTime.now();
     final duracionTotal = finJuego.difference(inicioJuego).inSeconds;
 
-    final jsonFinal = {
-      'juego': 'ortografia',
-      'fecha_hora_inicio': inicioJuego.toIso8601String(),
-      'fecha_hora_fin': finJuego.toIso8601String(),
-      'duracion_total_segundos': duracionTotal,
-      'correctas': respuestasCorrectas,
-      'incorrectas': respuestasIncorrectas,
-    };
+    final score = ScoreModel(
+      nombreJuego: 'ortografia',
+      aciertos: respuestasCorrectas,
+      fallos: respuestasIncorrectas,
+      tiempo: duracionTotal.toDouble(),
+      nivel: calcularNivel(respuestasCorrectas, respuestasIncorrectas),
+      fecha: finJuego,
+    );
 
-    print(jsonEncode(jsonFinal));
+    _registrarPuntaje(score);
 
     showDialog(
       context: context,
@@ -191,7 +216,7 @@ class _CommGame1PageState extends State<CommGame1Page> {
           ],
         ),
         content: Text(
-          '✅ Correctas: $respuestasCorrectas\n❌ Incorrectas: $respuestasIncorrectas\n⏱️ Duración: ${duracionTotal}s',
+          '✅ Correctas: $respuestasCorrectas\n❌ Incorrectas: $respuestasIncorrectas\n⏱️ Duración: ${duracionTotal}s\n📊 Nivel: ${calcularNivel(respuestasCorrectas, respuestasIncorrectas)}',
           style: const TextStyle(fontSize: 16),
         ),
         actions: [

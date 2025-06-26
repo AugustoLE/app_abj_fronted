@@ -1,183 +1,179 @@
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'dart:convert';
+import '../services/api_service.dart';
+import '../models/score_model.dart';
+import '../models/user_model.dart';
+
+class Suma {
+  final int numero1;
+  final int numero2;
+  final int resultadoCorrecto;
+
+  Suma({
+    required this.numero1,
+    required this.numero2,
+    required this.resultadoCorrecto,
+  });
+}
 
 class MathGame1Page extends StatefulWidget {
-  const MathGame1Page({super.key});
+  final UserModel user;
+  const MathGame1Page({Key? key, required this.user}) : super(key: key);
 
   @override
   State<MathGame1Page> createState() => _MathGame1PageState();
 }
 
 class _MathGame1PageState extends State<MathGame1Page> {
-  final TextEditingController _controller = TextEditingController();
-  late int num1, num2, resultado;
-  late String operador;
-  int? indiceOculto;
-
-  final Random _random = Random();
-
-  late DateTime inicioJuego;
+  Suma? sumaActual;
+  List<int> opciones = [];
   late DateTime inicioEjercicio;
+  late DateTime inicioJuego;
 
-  int contadorEjercicios = 0;
-  int correctas = 0;
-  int incorrectas = 0;
-
-  final List<Map<String, dynamic>> registros = [];
+  int ejerciciosRealizados = 0;
+  int respuestasCorrectas = 0;
+  int respuestasIncorrectas = 0;
 
   @override
   void initState() {
     super.initState();
+    reiniciarJuego();
+  }
+
+  void reiniciarJuego() {
+    ejerciciosRealizados = 0;
+    respuestasCorrectas = 0;
+    respuestasIncorrectas = 0;
     inicioJuego = DateTime.now();
-    generarOperacion();
+    generarNuevoEjercicio();
   }
 
-  void generarOperacion() {
-    final operadores = ['+', '-', '×', '÷'];
-    operador = operadores[_random.nextInt(4)];
-    indiceOculto = _random.nextInt(3);
-    inicioEjercicio = DateTime.now();
+  void generarNuevoEjercicio() {
+    final random = Random();
+    final numero1 = random.nextInt(50) + 1;
+    final numero2 = random.nextInt(50) + 1;
+    final resultadoCorrecto = numero1 + numero2;
 
-    switch (operador) {
-      case '+':
-        num1 = _random.nextInt(20) + 1;
-        num2 = _random.nextInt(20) + 1;
-        resultado = num1 + num2;
-        break;
-      case '-':
-        num1 = _random.nextInt(20) + 1;
-        num2 = _random.nextInt(20) + 1;
-        if (num2 > num1) {
-          final temp = num1;
-          num1 = num2;
-          num2 = temp;
-        }
-        resultado = num1 - num2;
-        break;
-      case '×':
-        num1 = _random.nextInt(5) + 1;
-        num2 = _random.nextInt(5) + 1;
-        resultado = num1 * num2;
-        break;
-      case '÷':
-        num2 = _random.nextInt(5) + 1;
-        resultado = _random.nextInt(5) + 1;
-        num1 = num2 * resultado;
-        break;
-    }
+    sumaActual = Suma(
+      numero1: numero1,
+      numero2: numero2,
+      resultadoCorrecto: resultadoCorrecto,
+    );
 
-    _controller.clear();
-    setState(() {});
+    opciones = [
+      resultadoCorrecto,
+      resultadoCorrecto + random.nextInt(10) + 1,
+      resultadoCorrecto - random.nextInt(10) - 1,
+      resultadoCorrecto + random.nextInt(20) - 10,
+    ]..shuffle();
+
+    setState(() {
+      inicioEjercicio = DateTime.now();
+    });
   }
 
-  void verificarRespuesta() {
-    int? respuesta = int.tryParse(_controller.text);
-    int valorCorrecto;
+  String calcularNivel(int aciertos, int fallos) {
+    final total = aciertos + fallos;
+    final tasaAciertos = total > 0 ? aciertos / total : 0.0;
+    if (tasaAciertos >= 0.8) return 'Avanzado';
+    if (tasaAciertos >= 0.5) return 'Intermedio';
+    return 'Principiante';
+  }
 
-    switch (indiceOculto) {
-      case 0:
-        valorCorrecto = num1;
-        break;
-      case 1:
-        valorCorrecto = num2;
-        break;
-      default:
-        valorCorrecto = resultado;
+  Future<void> _registrarPuntaje(ScoreModel score) async {
+    try {
+      final api = ApiService();
+      print('📤 Enviando puntaje al backend: ${jsonEncode(score.toJson())}');
+      await api.registerScore(widget.user.parentEmail, score);
+      print('✅ Puntaje registrado con éxito para ${widget.user.parentEmail}');
+    } catch (e, stackTrace) {
+      print('❌ Error al registrar puntaje: $e\n$stackTrace');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al registrar puntaje: $e')),
+      );
     }
+  }
 
-    final esCorrecto = respuesta == valorCorrecto;
+  void verificarRespuesta(int seleccion) {
+    print('📝 Entrando en verificarRespuesta con selección: $seleccion');
+    final esCorrecta = seleccion == sumaActual!.resultadoCorrecto;
     final ahora = DateTime.now();
     final duracion = ahora.difference(inicioEjercicio).inSeconds;
 
-    registros.add({
-      'respuesta': respuesta,
-      'es_correcta': esCorrecto,
+    final registro = {
+      'juego': 'sumas',
+      'respuesta': '$seleccion',
+      'es_correcta': esCorrecta,
       'tiempo_segundos': duracion,
-      'fecha_hora': ahora.toIso8601String()
-    });
+      'fecha_hora': ahora.toIso8601String(),
+    };
 
-    if (esCorrecto) {
-      correctas++;
+    print('📝 Registro de respuesta: ${jsonEncode(registro)}');
+
+    ejerciciosRealizados++;
+    if (esCorrecta) {
+      respuestasCorrectas++;
     } else {
-      incorrectas++;
+      respuestasIncorrectas++;
     }
 
-    contadorEjercicios++;
-
-    mostrarResultadoDialogo(
-      esCorrecto: esCorrecto,
-      respuestaCorrecta: valorCorrecto.toString(),
+    mostrarResultado(
+      esCorrecta: esCorrecta,
+      respuestaCorrecta: sumaActual!.resultadoCorrecto.toString(),
     );
   }
 
-  void mostrarResultadoDialogo({
-    required bool esCorrecto,
+  void mostrarResultado({
+    required bool esCorrecta,
     required String respuestaCorrecta,
   }) {
+    print('📊 Mostrando resultado: esCorrecta=$esCorrecta, ejerciciosRealizados=$ejerciciosRealizados');
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFF2FDFD),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        backgroundColor: Colors.white,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: esCorrecto ? Colors.green.shade600 : Colors.red.shade600,
-              width: 3,
+        title: Row(
+          children: [
+            Icon(
+              esCorrecta ? Icons.check_circle : Icons.cancel,
+              color: esCorrecta ? Color(0xFF123523) : Color(0xFFBD0000),
+              size: 28,
             ),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                esCorrecto ? Icons.check_circle_outline : Icons.cancel_outlined,
-                size: 48,
-                color: esCorrecto ? Colors.green : Colors.red,
+            const SizedBox(width: 8),
+            Text(
+              esCorrecta ? '¡Correcto!' : 'Respuesta Incorrecta',
+              style: TextStyle(
+                color: esCorrecta ? Color(0xFF123523) : Color(0xFFBD0000),
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 12),
-              Text(
-                esCorrecto ? '¡Correcto!' : 'Incorrecto',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: esCorrecto ? Colors.green.shade800 : Colors.red.shade800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                esCorrecto
-                    ? '¡Muy bien! Sigue así.'
-                    : 'La respuesta correcta era: $respuestaCorrecta',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  if (contadorEjercicios >= 10) {
-                    mostrarResumenFinal();
-                  } else {
-                    generarOperacion();
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF54ACAC),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Continuar'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
+        content: Text(
+          esCorrecta
+              ? '¡Muy bien hecho!'
+              : 'La respuesta correcta era: $respuestaCorrecta',
+          style: const TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF54ACAC)),
+            child: const Text('Siguiente'),
+            onPressed: () {
+              Navigator.pop(context);
+              print('🔄 Completado ejercicio $ejerciciosRealizados');
+              if (ejerciciosRealizados >= 10) {
+                print('🏁 Finalizando juego');
+                mostrarResumenFinal();
+              } else {
+                generarNuevoEjercicio();
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -186,236 +182,149 @@ class _MathGame1PageState extends State<MathGame1Page> {
     final finJuego = DateTime.now();
     final duracionTotal = finJuego.difference(inicioJuego).inSeconds;
 
-    final resumenJson = {
-      'juego': 'operaciones',
-      'fecha_inicio': inicioJuego.toIso8601String(),
-      'fecha_fin': finJuego.toIso8601String(),
-      'duracion_total_segundos': duracionTotal,
-      'correctas': correctas,
-      'incorrectas': incorrectas,
-    };
+    final score = ScoreModel(
+      nombreJuego: 'sumas',
+      aciertos: respuestasCorrectas,
+      fallos: respuestasIncorrectas,
+      tiempo: duracionTotal.toDouble(),
+      nivel: calcularNivel(respuestasCorrectas, respuestasIncorrectas),
+      fecha: finJuego,
+    );
+
+    print('📊 Generando resumen final: aciertos=$respuestasCorrectas, fallos=$respuestasIncorrectas');
+    _registrarPuntaje(score);
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFFF2FDFD),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        backgroundColor: Colors.white,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFF54ACAC), width: 3),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.emoji_events, size: 48, color: Color(0xFFBD0000)),
-              const SizedBox(height: 12),
-              const Text(
-                '¡Juego Finalizado!',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF123523),
-                ),
+        title: Row(
+          children: const [
+            Icon(Icons.bar_chart, color: Color(0xFF123523), size: 28),
+            SizedBox(width: 8),
+            Text(
+              'Resumen del Juego',
+              style: TextStyle(
+                color: Color(0xFF123523),
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 16),
-              Text('Correctas: $correctas', style: const TextStyle(fontSize: 16)),
-              Text('Incorrectas: $incorrectas', style: const TextStyle(fontSize: 16)),
-              Text('Duración total: $duracionTotal segundos',
-                  style: const TextStyle(fontSize: 16)),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context); // cerrar diálogo
-                      Navigator.pop(context); // ir al menú principal
-                    },
-                    icon: const Icon(Icons.home),
-                    label: const Text('Menú'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFBD0000),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        contadorEjercicios = 0;
-                        correctas = 0;
-                        incorrectas = 0;
-                        registros.clear();
-                        inicioJuego = DateTime.now();
-                      });
-                      Navigator.pop(context);
-                      generarOperacion();
-                    },
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Reintentar'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF54ACAC),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
+          ],
+        ),
+        content: Text(
+          '✅ Correctas: $respuestasCorrectas\n❌ Incorrectas: $respuestasIncorrectas\n⏱️ Duración: ${duracionTotal}s\n📊 Nivel: ${calcularNivel(respuestasCorrectas, respuestasIncorrectas)}',
+          style: const TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              reiniciarJuego();
+            },
+            child: const Text(
+              'Volver a intentar',
+              style: TextStyle(color: Color(0xFF123523)),
+            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField(String hint, bool oculto, String? valor) {
-    return SizedBox(
-      width: 100,
-      height: 60,
-      child: oculto
-          ? TextField(
-        controller: _controller,
-        keyboardType: TextInputType.number,
-        textAlign: TextAlign.center,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(fontSize: 28, color: Colors.grey),
-          border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        style: const TextStyle(fontSize: 28),
-        textInputAction: TextInputAction.done,
-      )
-          : Container(
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          valor ?? '',
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 28),
-        ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text(
+              'Menú',
+              style: TextStyle(color: Color(0xFFBD0000)),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    if (sumaActual == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Center(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Juego Matemático',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFBD0000),
-                      ),
-                      textAlign: TextAlign.center,
+      body: Stack(
+        children: [
+          Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Juego de Sumas',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFBD0000),
                     ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Operaciones matemáticas',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF123523),
-                      ),
-                      textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Resuelve la suma',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF123523),
                     ),
-                    const SizedBox(height: 40),
-                    screenWidth > 600
-                        ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildTextField(' ?', indiceOculto == 0, '$num1'),
-                        const SizedBox(width: 10),
-                        Text(operador, style: const TextStyle(fontSize: 24)),
-                        const SizedBox(width: 10),
-                        _buildTextField(' ?', indiceOculto == 1, '$num2'),
-                        const SizedBox(width: 10),
-                        const Text('=', style: TextStyle(fontSize: 24)),
-                        const SizedBox(width: 10),
-                        _buildTextField(' ?', indiceOculto == 2, '$resultado'),
-                      ],
-                    )
-                        : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildTextField(' ?', indiceOculto == 0, '$num1'),
-                        const SizedBox(height: 8),
-                        Text(operador, style: const TextStyle(fontSize: 24)),
-                        const SizedBox(height: 8),
-                        _buildTextField(' ?', indiceOculto == 1, '$num2'),
-                        const SizedBox(height: 8),
-                        const Text('=', style: TextStyle(fontSize: 24)),
-                        const SizedBox(height: 8),
-                        _buildTextField(' ?', indiceOculto == 2, '$resultado'),
-                      ],
-                    ),
-                    const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: verificarRespuesta,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF54ACAC),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                        textStyle: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: const BorderSide(color: Color(0xFF223030), width: 1),
+                  ),
+                  const SizedBox(height: 30),
+                  Text(
+                    '${sumaActual!.numero1} + ${sumaActual!.numero2} = ?',
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Selecciona la respuesta correcta:',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 30),
+                  for (var opcion in opciones)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: ElevatedButton(
+                        onPressed: () => verificarRespuesta(opcion),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF54ACAC),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        elevation: 4,
+                        child: Text('$opcion', style: const TextStyle(fontSize: 20)),
                       ),
-                      child: const Text('Comprobar'),
                     ),
-                    const SizedBox(height: 30),
-                  ],
-                ),
+                ],
               ),
             ),
-
-            // Botón de regreso al menú
-            Positioned(
-              top: 16,
-              left: 16,
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.teal.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.home, size: 32, color: Colors.teal),
-                  onPressed: () => Navigator.pop(context),
-                ),
+          ),
+          Positioned(
+            top: 40,
+            left: 20,
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.home, size: 36, color: Colors.deepOrange),
+                onPressed: () => Navigator.pop(context),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

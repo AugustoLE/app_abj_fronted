@@ -1,10 +1,13 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import '../pages/dashboard_page.dart';
+import '../services/api_service.dart';
+import '../models/score_model.dart';
+import '../models/user_model.dart';
 
 class MathGame2Page extends StatefulWidget {
-  const MathGame2Page({super.key});
+  final UserModel user; // Añadido para recibir el usuario
+  const MathGame2Page({super.key, required this.user});
 
   @override
   State<MathGame2Page> createState() => _MathGame2PageState();
@@ -61,6 +64,26 @@ class _MathGame2PageState extends State<MathGame2Page> {
     setState(() {});
   }
 
+  String calcularNivel(int aciertos, int fallos) {
+    final tasaAciertos = aciertos / (aciertos + fallos);
+    if (tasaAciertos >= 0.8) return 'Avanzado';
+    if (tasaAciertos >= 0.5) return 'Intermedio';
+    return 'Principiante';
+  }
+
+  Future<void> _registrarPuntaje(ScoreModel score) async {
+    try {
+      final api = ApiService();
+      await api.registerScore(widget.user.parentEmail, score);
+      print('✅ Puntaje registrado con éxito');
+    } catch (e) {
+      print('❌ Error al registrar puntaje: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al registrar puntaje')),
+      );
+    }
+  }
+
   void mostrarNotificacionResultado({
     required bool esCorrecta,
     required String respuestaCorrecta,
@@ -114,16 +137,16 @@ class _MathGame2PageState extends State<MathGame2Page> {
     final finJuego = DateTime.now();
     final duracionTotal = finJuego.difference(inicioJuego).inSeconds;
 
-    final jsonFinal = {
-      'juego': 'conjuntos',
-      'fecha_hora_inicio': inicioJuego.toIso8601String(),
-      'fecha_hora_fin': finJuego.toIso8601String(),
-      'duracion_total_segundos': duracionTotal,
-      'correctas': respuestasCorrectas,
-      'incorrectas': respuestasIncorrectas,
-    };
+    final score = ScoreModel(
+      nombreJuego: 'conjuntos',
+      aciertos: respuestasCorrectas,
+      fallos: respuestasIncorrectas,
+      tiempo: duracionTotal.toDouble(),
+      nivel: calcularNivel(respuestasCorrectas, respuestasIncorrectas),
+      fecha: finJuego,
+    );
 
-    print(jsonEncode(jsonFinal));
+    _registrarPuntaje(score);
 
     showDialog(
       context: context,
@@ -145,7 +168,7 @@ class _MathGame2PageState extends State<MathGame2Page> {
           ],
         ),
         content: Text(
-          '✅ Correctas: $respuestasCorrectas\n❌ Incorrectas: $respuestasIncorrectas\n⏱️ Duración: ${duracionTotal}s',
+          '✅ Correctas: $respuestasCorrectas\n❌ Incorrectas: $respuestasIncorrectas\n⏱️ Duración: ${duracionTotal}s\n📊 Nivel: ${calcularNivel(respuestasCorrectas, respuestasIncorrectas)}',
           style: const TextStyle(fontSize: 16),
         ),
         actions: [

@@ -2,11 +2,14 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/api_service.dart';
+import '../models/score_model.dart';
+import '../models/user_model.dart';
 
 class Animal {
   final String nombre;
-  final String tipoNacimiento; // Ovíparo o Mamífero
-  final String tipoEsqueleto;  // Vertebrado o Invertebrado
+  final String tipoNacimiento;
+  final String tipoEsqueleto;
 
   Animal({
     required this.nombre,
@@ -25,7 +28,8 @@ class Animal {
 }
 
 class SciGame2Page extends StatefulWidget {
-  const SciGame2Page({super.key});
+  final UserModel user; // Añadido para recibir el usuario
+  const SciGame2Page({super.key, required this.user});
 
   @override
   State<SciGame2Page> createState() => _SciGame2PageState();
@@ -82,6 +86,26 @@ class _SciGame2PageState extends State<SciGame2Page> {
     primerIndice = null;
   }
 
+  String calcularNivel(int aciertos, int fallos) {
+    final tasaAciertos = aciertos / (aciertos + fallos);
+    if (tasaAciertos >= 0.8) return 'Avanzado';
+    if (tasaAciertos >= 0.5) return 'Intermedio';
+    return 'Principiante';
+  }
+
+  Future<void> _registrarPuntaje(ScoreModel score) async {
+    try {
+      final api = ApiService();
+      await api.registerScore(widget.user.parentEmail, score);
+      print('✅ Puntaje registrado con éxito');
+    } catch (e) {
+      print('❌ Error al registrar puntaje: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al registrar puntaje')),
+      );
+    }
+  }
+
   void manejarSeleccion(int index) {
     if (bloqueado || revelados[index]) return;
 
@@ -112,14 +136,15 @@ class _SciGame2PageState extends State<SciGame2Page> {
 
     if (revelados.every((r) => r)) {
       final duracion = DateTime.now().difference(inicio).inSeconds;
-      final resultado = {
-        'juego': 'memoria_animales',
-        'tipo': tipoJuego,
-        'errores': errores,
-        'tiempo_segundos': duracion,
-        'fecha_hora': DateTime.now().toIso8601String(),
-      };
-      print(jsonEncode(resultado));
+      final score = ScoreModel(
+        nombreJuego: 'memoria_animales',
+        aciertos: 8, // 8 pares correctos
+        fallos: errores,
+        tiempo: duracion.toDouble(),
+        nivel: calcularNivel(8, errores),
+        fecha: DateTime.now(),
+      );
+      _registrarPuntaje(score);
       mostrarResultado(duracion);
     }
   }
@@ -129,7 +154,9 @@ class _SciGame2PageState extends State<SciGame2Page> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('¡Juego completado!'),
-        content: Text('Tiempo: $duracion segundos\nTipo: $tipoJuego\nErrores: $errores'),
+        content: Text(
+          'Tiempo: $duracion segundos\nTipo: $tipoJuego\nErrores: $errores\nNivel: ${calcularNivel(8, errores)}',
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -137,6 +164,13 @@ class _SciGame2PageState extends State<SciGame2Page> {
               setState(() => iniciarJuego());
             },
             child: const Text('Reintentar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text('Menú'),
           ),
         ],
       ),
@@ -160,7 +194,7 @@ class _SciGame2PageState extends State<SciGame2Page> {
               final anchoDisponible = constraints.maxWidth - 40;
               final altoDisponible = constraints.maxHeight - 40;
               final tamanoCuadroAncho = anchoDisponible / 4;
-              final tamanoCuadroAlto = altoDisponible / 5.5; // se reduce un poco para dejar espacio al título
+              final tamanoCuadroAlto = altoDisponible / 5.5;
               final tamanoCuadro = tamanoCuadroAncho < tamanoCuadroAlto
                   ? tamanoCuadroAncho
                   : tamanoCuadroAlto;

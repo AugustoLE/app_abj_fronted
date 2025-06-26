@@ -21,9 +21,18 @@ class UserModel {
     parentName: json['parentName'],
     parentLastName: json['parentLastName'],
     parentEmail: json['parentEmail'],
-    // no devolvemos la contraseña para seguridad
     childName: json['childName'],
     childLastName: json['childLastName'],
     courses: List<String>.from(json['courses']),
   );
+
+  Map<String, dynamic> toJson() => {
+    'parentName': parentName,
+    'parentLastName': parentLastName,
+    'parentEmail': parentEmail,
+    'parentPassword': parentPassword,
+    'childName': childName,
+    'childLastName': childLastName,
+    'courses': courses,
+  };
 }
