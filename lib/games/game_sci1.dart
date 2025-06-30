@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/api_service.dart';
+import '../models/score_model.dart';
+import '../models/user_model.dart';
 
 class ParteCuerpo {
   final String parte;
@@ -25,8 +28,8 @@ class ParteCuerpo {
 }
 
 class SciGame1Page extends StatefulWidget {
-  const SciGame1Page({Key? key}) : super(key: key);
-
+  final UserModel user; // Añadido para recibir el usuario
+  const SciGame1Page({super.key, required this.user});
   @override
   State<SciGame1Page> createState() => _SciGame1PageState();
 }
@@ -153,9 +156,30 @@ class _SciGame1PageState extends State<SciGame1Page> {
     );
   }
 
+  String calcularNivel(int aciertos, int fallos) {
+    final tasaAciertos = aciertos / (aciertos + fallos);
+    if (tasaAciertos >= 0.8) return 'Avanzado';
+    if (tasaAciertos >= 0.5) return 'Intermedio';
+    return 'Principiante';
+  }
+
+  Future<void> _registrarPuntaje(ScoreModel score) async {
+    try {
+      final api = ApiService();
+      await api.registerScore(widget.user.parentEmail, score);
+      print('✅ Puntaje registrado con éxito');
+    } catch (e) {
+      print('❌ Error al registrar puntaje: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al registrar puntaje')),
+      );
+    }
+  }
+
   void mostrarResumenFinal() {
     final finJuego = DateTime.now();
     final duracionTotal = finJuego.difference(inicioJuego).inSeconds;
+    String nivel;
 
     final resumen = {
       'juego': 'anatomia',
@@ -166,7 +190,19 @@ class _SciGame1PageState extends State<SciGame1Page> {
       'errores': errores,
     };
 
+    final score = ScoreModel(
+      nombreJuego: 'ParteCuerpo',
+      aciertos: aciertos,
+      fallos: errores,
+      tiempo: duracionTotal.toDouble(),
+      nivel: calcularNivel(aciertos, errores),
+      fecha: DateTime.now(),
+    );
+    _registrarPuntaje(score);
+
     print(jsonEncode(resumen));
+
+    nivel = score.nivel.toString();
 
     showDialog(
       context: context,
@@ -179,7 +215,9 @@ class _SciGame1PageState extends State<SciGame1Page> {
             color: Color(0xFF006600),
           ),
         ),
-        content: Text('Aciertos: $aciertos\nErrores: $errores'),
+        content: Text(
+          'Aciertos: $aciertos\n''Errores: $errores\n''Nivel alcanzado: $nivel', // 👈 mostramos el nivel aquí
+        ),
         actions: [
           TextButton(
             onPressed: reiniciarJuego,

@@ -32,9 +32,9 @@ final Map<String, WidgetBuilder> appRoutes = {
     user: ModalRoute.of(context)!.settings.arguments as UserModel,
   ),
   '/game_comm2': (_) => CommGame2Page(),
-  //'/game_sci1': (context) => SciGame1Page(
-  //  user: ModalRoute.of(context)!.settings.arguments as UserModel,
-  //),
+  '/game_sci1': (context) => SciGame1Page(
+    user: ModalRoute.of(context)!.settings.arguments as UserModel,
+  ),
   '/game_sci2': (context) => SciGame2Page(
     user: ModalRoute.of(context)!.settings.arguments as UserModel,
   ),
