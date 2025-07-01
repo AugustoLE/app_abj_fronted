@@ -72,14 +72,6 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(
-          '¡Hola, ${user.childName}! 🎮',
-          style: TextStyle(
-            fontSize: (screenWidth * 0.03).clamp(16.0, 24.0),
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
         backgroundColor: Colors.white,
         actions: [
           TextButton(
@@ -111,7 +103,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '🧩 Juegos disponibles según tus cursos:',
+              '🧩 Hola, ${user.childName}. Estos son tus juegos disponibles según tus cursos:',
               style: TextStyle(
                 fontSize: (screenWidth * 0.045).clamp(18.0, 24.0),
                 fontWeight: FontWeight.bold,

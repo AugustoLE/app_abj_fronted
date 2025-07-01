@@ -20,6 +20,11 @@ dev_dependencies:
 
   flutter_lints: ^5.0.0
 
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icono_app.png"
+
 flutter:
   uses-material-design: true
   fonts:
@@ -44,3 +49,4 @@ flutter:
     - assets/Imagenes/imagenes_perfil/
     - assets/Imagenes/Juegos/files/animalesTiposCien.csv
     - assets/Imagenes/Juegos/JuegosCien/Juego2/
+    - assets/icono_app.png
